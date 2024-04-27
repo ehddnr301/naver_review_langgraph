@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8501:8501"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+
+  redis:
+    build:
+      context: ./redis/
+    ports:
+      - "6379:6379"
+
+  poper:
+    build:
+      context: ./pop_item/
+    depends_on:
+      - redis
+      
