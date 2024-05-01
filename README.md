@@ -8,7 +8,7 @@
 
 ## Langgraph
 
-![아키텍처2](./images/image2.png)
+![아키텍처2](./images/image3.png)
 
 - `python test.py` 실행으로 input을 통해 검색어를 추출하고 검색을 진행하여 음식점 이름으로만 추천을 진행합니다.
 
