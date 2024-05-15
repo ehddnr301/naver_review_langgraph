@@ -3,7 +3,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
-from langchain.tools.render import format_tool_to_openai_function
 
 from .schemas import PlaceAndFood
 from .tools import crawl_restaurants
@@ -57,9 +56,7 @@ search_prompt = ChatPromptTemplate.from_messages(
 
 tools = [crawl_restaurants]
 
-functions = [format_tool_to_openai_function(t) for t in tools]
-
-search_chain = search_prompt | llm.bind_functions(functions)
+search_chain = search_prompt | llm.bind_tools(tools)
 
 # Recommender
 
