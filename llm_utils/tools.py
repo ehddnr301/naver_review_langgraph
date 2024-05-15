@@ -2,15 +2,13 @@ import requests
 from typing import Annotated
 from langchain_core.tools import tool
 
-from .schemas import PlaceAndFood
-
 headers = {
     "referer": f"https://pcmap.place.naver.com/restaurant/list",
     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
 }
 
 
-def fetch_data(query: str, start: int):
+def fetch_restaurants(query: str, start: int):
     try:
         data = dict(
             operationName="getRestaurants",
@@ -19,7 +17,7 @@ def fetch_data(query: str, start: int):
                 isNmap=False,
                 restaurantListInput={
                     "deviceType": "pcmap",
-                    "display": 50,
+                    "display": 5,
                     "filterOpening": None,
                     "isCurrentLocationSearch": None,
                     "isPcmap": True,
@@ -38,8 +36,10 @@ def fetch_data(query: str, start: int):
             headers=headers,
             json=data,
         )
-
-        return resp.json()
+        final_response = [
+            item["name"] for item in resp.json()["data"]["restaurants"]["items"]
+        ]
+        return ",".join(final_response)
     except Exception as e:
         print(e)
         return []
@@ -51,6 +51,6 @@ def crawl_restaurants(search_term: Annotated[str, "search term"]):
     Crawls restaurants based on the search term
     """
     start = 1
-    res = fetch_data(search_term, start)
+    res = fetch_restaurants(search_term, start)
 
     return res
