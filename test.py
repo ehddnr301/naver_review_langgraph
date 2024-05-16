@@ -51,10 +51,11 @@ builder.add_edge(RECOMMEND, END)
 graph = builder.compile()
 
 if __name__ == "__main__":
-    human_message = HumanMessage(content="강남역 얼큰한 국수 맛집 추천해줘")
+    human_message = HumanMessage(
+        content="강남역 돈까스 추천해줘 예약가능한 가게여야만 해"
+    )
 
     res = graph.invoke(input=human_message)
-    print("*" * 30)
     for r in res:
         print(r)
         print("-" * 60)
