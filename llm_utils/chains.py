@@ -5,7 +5,7 @@ from langchain_core.output_parsers.openai_tools import (
 )
 
 from .schemas import PlaceAndFood
-from .tools import crawl_restaurants
+from .tools import crawl_restaurants, query_restaurants
 
 # Extractor
 parser_pydantic = PydanticToolsParser(tools=[PlaceAndFood])
@@ -49,12 +49,16 @@ search_prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             "위의 검색어를 기반으로 음식점을 검색해주세요."
-            "다음 tool을 사용할 수 있습니다: crawl_restaurants - 검색어를 기반으로 음식점을 크롤링할 수 있습니다.",
+            "다음 tool을 사용할 수 있습니다:"
+            "crawl_restaurants - 검색어를 기반으로 음식점을 크롤링할 수 있습니다."
+            "query_restaurants - 검색어를 기반으로 음식점을 DB에서 쿼리할 수 있습니다."
+            "아래 툴을 사용해주세요",
         ),
+        MessagesPlaceholder(variable_name="tool_choice"),
     ]
 )
 
-tools = [crawl_restaurants]
+tools = [crawl_restaurants, query_restaurants]
 
 search_chain = search_prompt | llm.bind_tools(tools)
 
@@ -69,11 +73,12 @@ recommend_prompt = ChatPromptTemplate.from_messages(
                 적절한 식당을 추천하는 것이 당신의 필수적인 역할입니다.
             """,
         ),
-        MessagesPlaceholder(variable_name="restaurants_list"),
+        MessagesPlaceholder(variable_name="user_input"),
         (
             "system",
-            "위 맛집 목록을 바탕으로 맛집을 추천해주세요",
+            "위 유저의 요구사항을 만족하는 아래 검색된 맛집 목록을 바탕으로 추천해주세요",
         ),
+        MessagesPlaceholder(variable_name="restaurants_list"),
     ]
 )
 

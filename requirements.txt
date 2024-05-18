@@ -6,3 +6,4 @@ langsmith==0.1.51
 langchain-experimental==0.0.57
 langgraph==0.0.39
 python-dotenv==1.0.1
+psycopg2-binary==2.9.9

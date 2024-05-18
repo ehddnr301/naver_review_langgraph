@@ -140,3 +140,34 @@ def fetch_reviews(restaurant_id: int) -> pd.DataFrame:
         review_data = pd.concat([review_data, tmp])
 
     return review_data
+
+
+def query_search_term(search_term: str):
+    import pandas as pd
+    from sqlalchemy import create_engine
+
+    engine = create_engine("postgresql://postgres:postgres@localhost:5432/postgres")
+    df = pd.read_sql_query(
+        f"""
+        WITH temp_restaurants AS (
+            SELECT * FROM restaurants
+            WHERE search_term = '{search_term}'
+        )
+
+        SELECT A.restaurant_id
+        , A.restaurant_name
+        , A.category
+        , A.common_address
+        , A.options
+        , A.business_hours
+        , A.naver_booking_category
+        , B.content
+        FROM temp_restaurants AS A
+        INNER JOIN reviews AS B
+        ON A.restaurant_id = B.restaurant_id
+        LIMIT 2
+    """,
+        engine,
+    )
+
+    return df
