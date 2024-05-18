@@ -5,6 +5,7 @@
 
 ![아키텍처3](./images/image4.png)
 
+[LangSmith](https://smith.langchain.com/public/22005f26-0bcd-4da3-9c4e-191ddf33c12d/r)
 1. 검색어를 추출합니다.
 2. Search Node에서는 처음 시도에서는 query_restaurants 를 이용하여 검색합니다.
 3. Decide Node에서는 결과가 없을경우 Search Node로 돌아가 crwal_restaurants 를 이용합니다.
