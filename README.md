@@ -1,10 +1,14 @@
 ## Langgraph
 
-### 2024-05-15 (Coming Soon!)
+
+### 2024-05-15
 
 ![아키텍처3](./images/image4.png)
 
-- 매번 크롤링하는것은 비효율적이기떄문에 이미 해당 검색어로 검색을 했었다면 저장된 정보로 추천을 진행하기 위함입니다.
+1. 검색어를 추출합니다.
+2. Search Node에서는 처음 시도에서는 query_restaurants 를 이용하여 검색합니다.
+3. Decide Node에서는 결과가 없을경우 Search Node로 돌아가 crwal_restaurants 를 이용합니다.
+4. 최종적으로 Recommend Node에서 데이터를 바탕으로 유저에게 맛집을 추천합니다.
 
 ### 2024-05-01
 
