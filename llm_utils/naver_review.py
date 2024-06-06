@@ -6,6 +6,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+from google.cloud import bigquery
+
 
 def fetch_restaurants(query: str, start: int) -> pd.DataFrame:
     headers = {
@@ -77,7 +79,6 @@ def fetch_restaurants(query: str, start: int) -> pd.DataFrame:
         return restaurant_data
 
     except Exception as e:
-        print(e)
         return []
 
 
@@ -143,31 +144,73 @@ def fetch_reviews(restaurant_id: int) -> pd.DataFrame:
 
 
 def query_search_term(search_term: str):
-    import pandas as pd
-    from sqlalchemy import create_engine
-
-    engine = create_engine("postgresql://postgres:postgres@localhost:5432/postgres")
-    df = pd.read_sql_query(
-        f"""
-        WITH temp_restaurants AS (
-            SELECT * FROM restaurants
-            WHERE search_term = '{search_term}'
+    client = bigquery.Client()
+    place, keyword = search_term.split(" ")
+    place = place.replace("역", "")
+    query = f"""
+        WITH searched_restaurants_id AS (
+        SELECT DISTINCT place_id
+        FROM `pseudocon-24-summer.place_id.gangnam`
+        WHERE search_query LIKE '%{search_term}%'
+        ), recent_review AS (
+        SELECT restaurant_id
+        , body
+        , review_category.element.displayName
+        , DENSE_RANK() OVER (PARTITION BY restaurant_id ORDER BY viewCount DESC) AS row_num
+        FROM `pseudocon-24-summer.review.naver_2`
+        , unnest(votedKeywords.list) AS review_category
+        WHERE body <> '' AND restaurant_id IN (
+            SELECT place_id
+            FROM searched_restaurants_id
+        )
+        ), TOP10_recent_review AS (
+        SELECT restaurant_id
+        , body
+        , STRING_AGG(distinct displayName, ', ') AS displayName
+        FROM recent_review
+        WHERE row_num <= 10
+        GROUP BY restaurant_id, body
+        ), restaurants_list AS (
+        SELECT id
+        , name
+        , commonAddress
+        , businessHours
+        , options
+        , naverBookingCategory
+        FROM `pseudocon-24-summer.gangnam.japanese`
+        WHERE id IN (
+            SELECT place_id
+            FROM searched_restaurants_id
+        )
         )
 
-        SELECT A.restaurant_id
-        , A.restaurant_name
-        , A.category
-        , A.common_address
-        , A.options
-        , A.business_hours
-        , A.naver_booking_category
-        , B.content
-        FROM temp_restaurants AS A
-        INNER JOIN reviews AS B
-        ON A.restaurant_id = B.restaurant_id
-        LIMIT 2
-    """,
-        engine,
-    )
+        SELECT
+            A.name AS restaurant_name,
+            A.commonAddress,
+            A.businessHours AS business_hours,
+            A.options,
+            STRING_AGG(B.body, '\\n') AS review_content,
+            String_AGG(distinct B.displayName, ', ') AS review_category,
+            CASE 
+                WHEN A.naverBookingCategory IS NULL 
+                    THEN '네이버 예약 불가' 
+                ELSE '네이버 예약 가능'
+            END AS naverBookingCategory
+        FROM restaurants_list AS A
+        INNER JOIN TOP10_recent_review AS B
+        ON A.id = B.restaurant_id
+        GROUP BY
+            A.name,
+            A.commonAddress,
+            A.businessHours,
+            A.options,
+            A.naverBookingCategory
+        LIMIT 10
+    """
+    print(query)
 
+    query_job = client.query_and_wait(query)
+
+    df = query_job.to_dataframe()
+    print(df)
     return df

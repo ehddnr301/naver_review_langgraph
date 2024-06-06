@@ -10,7 +10,7 @@ from .tools import crawl_restaurants, query_restaurants
 # Extractor
 parser_pydantic = PydanticToolsParser(tools=[PlaceAndFood])
 
-llm = ChatOpenAI()
+llm = ChatOpenAI(model="gpt-4o")
 
 extract_prompt = ChatPromptTemplate.from_messages(
     [
@@ -71,12 +71,28 @@ recommend_prompt = ChatPromptTemplate.from_messages(
             """
                 너는 검색결과를 바탕으로 사용자에게 식당을 추천하는 Assistance이다.
                 적절한 식당을 추천하는 것이 당신의 필수적인 역할입니다.
+                응답은 아래 형태를 유지해야 합니다.
+                
+                **음식점 이름**
+                음식점의 주요 리뷰 카테고리: 리뷰 카테고리 정보
+                음식점의 위치: 위치 정보
+                음식점의 영업시간: 영업시간 정보
+                음식점의 편의시설 및 서비스: 편의시설 및 서비스 정보
+                음식점의 네이버 예약 가능 여부: 네이버 예약 가능 여부 정보
+                음식점의 리뷰 내용 요약
+                1. 리뷰 내용 요약 1
+                2. 리뷰 내용 요약 2
+                3. 리뷰 내용 요약 3
+                
+                아래 내용을 지켜 응답해주세요.
+                1. 위에서 정의된 내용외에는 적지않아야합니다.
             """,
         ),
         MessagesPlaceholder(variable_name="user_input"),
         (
             "system",
-            "위 유저의 요구사항을 만족하는 아래 검색된 맛집 목록을 바탕으로 추천해주세요",
+            "위 유저의 요구사항을 만족하여, 아래 검색된 맛집 목록을 중에서 추천해주세요"
+            "유저의 요구사항을 만족하는 맛집이 없다면 '해당하는 맛집이 없습니다'라고 응답해주세요.",
         ),
         MessagesPlaceholder(variable_name="restaurants_list"),
     ]

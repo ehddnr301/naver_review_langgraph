@@ -1,46 +1,53 @@
-import time
-import redis
 import streamlit as st
 
-r = redis.Redis(host="redis", port=6379, password="pseudolab", decode_responses=True)
+from llm_utils.graph import graph
+from langchain_core.messages import HumanMessage
 
-st.title("레스토랑 검색 및 목록")
-search_query = st.text_input("검색할 지역 또는 레스토랑을 입력하세요:", "강남역 맛집")
+st.set_page_config(page_title="🍔 맛집 추천 서비스", layout="wide")
 
-if st.button("검색"):
+st.title("🍔 맛집 추천 서비스")
 
-    from crawl_list import fetch_data
+if "responses" not in st.session_state:
+    st.session_state.responses = []
 
-    initial_data = fetch_data(search_query, 1)
-    print(initial_data)
-    if initial_data:
-        items = initial_data["data"]["restaurants"]["items"]
-        id_n_name_list = [item["name"] for item in items]
+st.write("### Responses")
+response_container = st.container()
 
-        for item in id_n_name_list:
-            r.lpush("restaurant_list", item)
+for response in st.session_state.responses:
+    with response_container:
+        st.text(response)
+        st.write("---")  # 구분선 추가
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([4, 1])
 
-restaurant_list = r.lrange("restaurant_list", 0, -1)
 with col1:
-    col1.empty()
-    if restaurant_list:
-        st.write("현재 레스토랑 목록:")
-        for restaurant in restaurant_list:
-            st.text(restaurant)
-    else:
-        st.write("레스토랑 목록이 비어있습니다.")
+    input_text = st.text_input("Enter your query:", key="input_text")
 
-poped_list = r.lrange("poped_list", 0, -1)
 with col2:
-    col2.empty()
-    if poped_list:
-        st.write("현재 처리된 레스토랑 목록:")
-        for poped in poped_list:
-            st.text(poped)
-    else:
-        st.write("처리목록이 비어있습니다.")
+    if st.button("Submit"):
+        if input_text:
+            human_message = HumanMessage(content=input_text)
 
-time.sleep(5)
-st.rerun()
+            res = graph.invoke(input=human_message)
+            response = f"""
+                질문: {input_text}\n
+                {res[-1].content}
+            """
+            response = response.replace("                ", "")
+
+            st.session_state.responses.append(response)
+            st.rerun()
+
+st.markdown(
+    """
+        <style>
+        .stTextInput, .stButton {
+            margin-bottom: 0 !important;
+        }
+        .stButton {
+            margin-top: 30px;
+        }
+        </style>
+    """,
+    unsafe_allow_html=True,
+)

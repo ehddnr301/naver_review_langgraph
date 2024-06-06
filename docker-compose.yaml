@@ -14,10 +14,3 @@ services:
       context: ./redis/
     ports:
       - "6379:6379"
-
-  poper:
-    build:
-      context: ./pop_item/
-    depends_on:
-      - redis
-      

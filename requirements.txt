@@ -7,3 +7,7 @@ langchain-experimental==0.0.57
 langgraph==0.0.39
 python-dotenv==1.0.1
 psycopg2-binary==2.9.9
+google-cloud-bigquery==3.23.1
+db-dtypes==1.2.0
+faiss-cpu==1.8.0
+sqlalchemy-bigquery==1.11.0
