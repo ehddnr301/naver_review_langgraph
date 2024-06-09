@@ -1,4 +1,5 @@
 import requests
+import random
 from collections import Counter
 from typing import Annotated
 from langchain_core.tools import tool
@@ -21,7 +22,7 @@ def crawl_restaurants(
     And Each restaurant's information is separated by double newline character
     """
     try:
-        restaurants = fetch_restaurants(search_term, 0)
+        restaurants = fetch_restaurants(search_term, random.randint(0, 3))
         results = ""
 
         for _, row in restaurants.iterrows():

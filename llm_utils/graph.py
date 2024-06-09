@@ -24,6 +24,7 @@ tool_node = ToolNode([crawl_restaurants, query_restaurants])
 
 
 def extract_node(state: Sequence[BaseMessage]):
+    my_redis.set("current_state", "사용자의 대화에서 검색어를 추출중이에요.")
     res = extract_chain.invoke(input={"search_query": [state[-1].content]})
     search_query = " ".join(list(res[0].dict().values()))
     if "분류불가" in search_query:
@@ -34,10 +35,12 @@ def extract_node(state: Sequence[BaseMessage]):
 
 
 def search_node(state: Sequence[BaseMessage]):
-    if len(state) > 10:
-        raise ValueError("Too many iterations")
     search_term = state[-1].content if len(state) < 4 else state[1].content
     tool_choice = "query_restaurants" if len(state) < 4 else "crawl_restaurants"
+    if tool_choice == "query_restaurants":
+        my_redis.set("current_state", "대화에서 추출된 검색어로 맛집을 검색중이에요.")
+    elif tool_choice == "crawl_restaurants":
+        my_redis.set("current_state", "대화에서 추출된 검색어로 맛집을 크롤링중이에요.")
     res = search_chain.invoke(
         input={"search_term": [search_term], "tool_choice": [tool_choice]}
     )
@@ -46,7 +49,7 @@ def search_node(state: Sequence[BaseMessage]):
 
 
 def recommend_node(state: Sequence[BaseMessage]):
-
+    my_redis.set("current_state", "사용자의 요구사항에 맞는 최적의 맛집을 찾고있어요.")
     res = recommend_chain.invoke(
         input={
             "user_input": [state[0].content],
@@ -61,14 +64,16 @@ def decide_node(state: Sequence[BaseMessage]):
     content = state[-1].content
     if content == "":
         return SEARCH
+    elif content == "사용자의 니즈에 맞는 음식점을 찾지 못했어요.":
+        return END
     else:
         return RECOMMEND
 
 
 def decide_node_extract(state: Sequence[BaseMessage]):
     content = state[-1].content
-
     if content == "잘 이해하지 못했어요. 다시 말씀해주세요.":
+        my_redis.set("current_state", "")
         return END
     else:
         return SEARCH
@@ -76,10 +81,13 @@ def decide_node_extract(state: Sequence[BaseMessage]):
 
 def decide_node_recommend(state: Sequence[BaseMessage]):
     content = state[-1].content
-
-    if "맛집이 없습니다" in content:
+    if len(state) > 10:
+        my_redis.set("current_state", "")
+        return END
+    elif "맛집이 없습니다" in content:
         return SEARCH
     else:
+        my_redis.set("current_state", "")
         return END
 
 
@@ -108,6 +116,7 @@ builder.add_conditional_edges(
     {
         RECOMMEND: RECOMMEND,
         SEARCH: SEARCH,
+        END: END,
     },
 )
 builder.add_conditional_edges(
@@ -118,7 +127,5 @@ builder.add_conditional_edges(
         END: END,
     },
 )
-
-graph = builder.compile()
 
 __all__ = ["graph"]

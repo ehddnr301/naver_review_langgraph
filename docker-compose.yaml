@@ -14,3 +14,11 @@ services:
       context: ./redis/
     ports:
       - "6379:6379"
+
+  server:
+    build:
+      context: ./server/
+    depends_on:
+      - redis
+    ports:
+      - "9999:9999"

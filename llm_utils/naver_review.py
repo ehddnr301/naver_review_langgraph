@@ -150,18 +150,18 @@ def query_search_term(search_term: str):
     query = f"""
         WITH searched_restaurants_id AS (
         SELECT DISTINCT place_id
-        FROM `pseudocon-24-summer.place_id.gangnam`
+        FROM `pseudocon-24-summer.place_id.search_query`
         WHERE search_query LIKE '%{search_term}%'
         ), recent_review AS (
-        SELECT restaurant_id
-        , body
-        , review_category.element.displayName
-        , DENSE_RANK() OVER (PARTITION BY restaurant_id ORDER BY viewCount DESC) AS row_num
-        FROM `pseudocon-24-summer.review.naver_2`
-        , unnest(votedKeywords.list) AS review_category
-        WHERE body <> '' AND restaurant_id IN (
-            SELECT place_id
-            FROM searched_restaurants_id
+            SELECT place_id AS restaurant_id
+            , body
+            , review_category.element.displayName
+            , DENSE_RANK() OVER (PARTITION BY place_id ORDER BY viewCount DESC) AS row_num
+            FROM `pseudocon-24-summer.review.naver`
+            , unnest(votedKeywords.list) AS review_category
+            WHERE body <> '' AND place_id IN (
+                SELECT place_id
+                FROM searched_restaurants_id
         )
         ), TOP10_recent_review AS (
         SELECT restaurant_id
@@ -177,7 +177,7 @@ def query_search_term(search_term: str):
         , businessHours
         , options
         , naverBookingCategory
-        FROM `pseudocon-24-summer.gangnam.japanese`
+        FROM `pseudocon-24-summer.gangnam.pasta`
         WHERE id IN (
             SELECT place_id
             FROM searched_restaurants_id
@@ -207,10 +207,8 @@ def query_search_term(search_term: str):
             A.naverBookingCategory
         LIMIT 10
     """
-    print(query)
 
     query_job = client.query_and_wait(query)
 
     df = query_job.to_dataframe()
-    print(df)
     return df
